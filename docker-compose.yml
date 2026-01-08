@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  feast-dq-connector:
+    build: .
+    env_file:
+      - .env
+    # to be removed if Feast is running on Docker too
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - "C:/Users/kerem/Documents/FHIRProjects/onfhir-feast/output-data/reports:/app/reports"
+    environment:
+      - FEAST_REPORT_OUTPUT_DIR=/app/reports
+    networks:
+      - ai4hf-monitoring
+
+networks:
+  ai4hf-monitoring:
+    external: true
