@@ -15,3 +15,7 @@ Deploy the Monitoring Platform before running the connector.
 Once both the Feast server and the Monitoring Platform are running, start the connector:
 
     docker compose up -d
+
+To run locally, before running the compose, build the required image of the connector:
+    
+    docker build -t srdc/data-quality-monitoring-platform-connector:latest .

@@ -1,20 +1,20 @@
 version: "3.8"
 
 services:
-  feast-dq-connector:
-    build: .
-    env_file:
-      - .env
-    # to be removed if Feast is running on Docker too
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - "C:/Users/kerem/Documents/FHIRProjects/onfhir-feast/output-data/reports:/app/reports"
+  data-quality-monitoring-platform-connector:
+    image: srdc/data-quality-monitoring-platform-connector:latest
     environment:
-      - FEAST_REPORT_OUTPUT_DIR=/app/reports
+      FEAST_SERVER_URL: "http://onfhir-feast:8085/onfhir-feast/api"
+      FEAST_CRITERIA_IDS: "maggic-quality-criteria"
+      FEAST_DATASET_IDS: "0ab9cf84-04a8-4cbf-8163-55cf50d65784"
+      LOGSTASH_URL: "http://ai4hf-monitoring-logstash:5000"
+      LOGSTASH_BASIC_AUTH: "bG9nc3Rhc2hfaW50ZXJuYWw6MnNnUWRIMEtySGE1YzJsUzBMR2c="
     networks:
       - ai4hf-monitoring
+      - onfhir-feast-network
 
 networks:
   ai4hf-monitoring:
+    external: true
+  onfhir-feast-network:
     external: true
