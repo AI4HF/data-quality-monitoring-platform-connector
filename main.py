@@ -78,12 +78,10 @@ class FeastDQOnlyConnector:
         return None
 
     def evaluate_quality(self, dataset_id: str, criteria_id: str) -> dict:
-        """Trigger Feast dataset quality evaluation using filename-only outputPath; return report JSON."""
-        ts_str = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-        filename_only = f"{dataset_id}-{criteria_id}-{ts_str}.json"
+        """Trigger Feast dataset quality evaluation without persisting to a file."""
         url = f"{self.base}/Dataset/{dataset_id}/DatasetQualityCriteria/{criteria_id}/$quality"
-        _log(f"[FEAST] POST {url}?outputPath={filename_only}")
-        r = requests.post(url, params={"outputPath": filename_only}, headers=self._feast_headers(), timeout=180)
+        _log(f"[FEAST] POST {url}")
+        r = requests.post(url, headers=self._feast_headers(), timeout=180)
         _log(f"[FEAST] POST status={r.status_code}")
         r.raise_for_status()
         return r.json()
