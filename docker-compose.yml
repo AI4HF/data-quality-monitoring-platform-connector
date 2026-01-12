@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  data-quality-monitoring-platform-connector:
+    image: srdc/data-quality-monitoring-platform-connector:latest
+    environment:
+      FEAST_SERVER_URL: "http://onfhir-feast:8085/onfhir-feast/api"
+      FEAST_CRITERIA_IDS: "maggic-quality-criteria"
+      FEAST_DATASET_IDS: "0ab9cf84-04a8-4cbf-8163-55cf50d65784"
+      LOGSTASH_URL: "http://ai4hf-monitoring-logstash:5000"
+      LOGSTASH_BASIC_AUTH: "bG9nc3Rhc2hfaW50ZXJuYWw6MnNnUWRIMEtySGE1YzJsUzBMR2c="
+    networks:
+      - ai4hf-monitoring
+      - onfhir-feast-network
+
+networks:
+  ai4hf-monitoring:
+    external: true
+  onfhir-feast-network:
+    external: true
