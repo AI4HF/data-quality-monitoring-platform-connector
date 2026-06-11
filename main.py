@@ -64,19 +64,6 @@ class FeastDQOnlyConnector:
             "Authorization": f"Basic {self._resolve_logstash_basic()}"
         }
 
-    def fetch_dataset_name(self, dataset_id: str) -> str | None:
-        """Query Feast for dataset metadata and return a reasonable display name (title/name)."""
-        url = f"{self.base}/Dataset/{dataset_id}"
-        _log(f"[FEAST] GET {url}")
-        r = requests.get(url, headers=self._feast_headers(), timeout=30)
-        _log(f"[FEAST] GET status={r.status_code}")
-        if r.ok and r.text:
-            j = r.json()
-            name = j.get("title") or j.get("name")
-            _log(f"[FEAST] Dataset name: {name!r}")
-            return name
-        return None
-
     def evaluate_quality(self, dataset_id: str, criteria_id: str) -> dict:
         """Trigger Feast dataset quality evaluation without persisting to a file."""
         url = f"{self.base}/Dataset/{dataset_id}/DatasetQualityCriteria/{criteria_id}/$quality"
@@ -102,11 +89,11 @@ class FeastDQOnlyConnector:
         total_events = 0
         for ds_id in self.dataset_ids:
             _log(f"[RUN] Dataset={ds_id}")
-            ds_name = self.fetch_dataset_name(ds_id)
             for crit in self.criteria_ids:
                 total_pairs += 1
                 _log(f"[RUN] Criteria={crit}")
                 report = self.evaluate_quality(ds_id, crit)
+                effective_ds_id = report.get("datasetId") or ds_id
                 iso_ts = to_iso_z(report.get("issued"))
                 results = (report.get("results") or [])
                 _log(f"[RUN] Results={len(results)} issued={iso_ts}")
@@ -114,11 +101,12 @@ class FeastDQOnlyConnector:
                 for res in results:
                     cat = res.get("category") or {}
                     evt = MonitoringPlatformQualityCheck(
-                        dataset_id=report.get("datasetId") or ds_id,
-                        dataset_name=ds_name,
+                        dataset_id=effective_ds_id,
+                        dataset_name=effective_ds_id,
                         name=res.get("name"),
                         category={"context": cat.get("context"), "category": cat.get("category")},
                         low=res.get("low"),
+                        high=res.get("high"),
                         value=float(res.get("value")) if res.get("value") is not None else None,
                         passed=bool(res.get("passed")),
                         at_timestamp=iso_ts
