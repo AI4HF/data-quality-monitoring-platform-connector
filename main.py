@@ -49,6 +49,19 @@ class FeastDQOnlyConnector:
         """Build HTTP headers for Feast request."""
         return {"Content-Type": "application/json"}
 
+    def fetch_dataset_name(self, dataset_id: str) -> str | None:
+        """Query Feast for dataset metadata and return a reasonable display name (title/name)."""
+        url = f"{self.base}/Dataset/{dataset_id}"
+        _log(f"[FEAST] GET {url}")
+        r = requests.get(url, headers=self._feast_headers(), timeout=30)
+        _log(f"[FEAST] GET status={r.status_code}")
+        if r.ok and r.text:
+            j = r.json()
+            name = j.get("title") or j.get("name")
+            _log(f"[FEAST] Dataset name: {name!r}")
+            return name
+        return None
+
     def _resolve_logstash_basic(self) -> str:
         """Return base64-encoded Basic token from LOGSTASH_BASIC_AUTH; error if missing."""
         token = _opt(self.logstash_basic_auth)
@@ -82,18 +95,18 @@ class FeastDQOnlyConnector:
         r.raise_for_status()
 
     def run_once(self):
-        """Run connector once for all dataset–criteria pairs; log counts and exit."""
+        """Run connector once for all dataset-criteria pairs; log counts and exit."""
         _log("[RUN] Start")
         _log(f"[RUN] Datasets={self.dataset_ids} Criteria={self.criteria_ids}")
         total_pairs = 0
         total_events = 0
         for ds_id in self.dataset_ids:
             _log(f"[RUN] Dataset={ds_id}")
+            ds_name = self.fetch_dataset_name(ds_id) or ds_id
             for crit in self.criteria_ids:
                 total_pairs += 1
                 _log(f"[RUN] Criteria={crit}")
                 report = self.evaluate_quality(ds_id, crit)
-                effective_ds_id = report.get("datasetId") or ds_id
                 iso_ts = to_iso_z(report.get("issued"))
                 results = (report.get("results") or [])
                 _log(f"[RUN] Results={len(results)} issued={iso_ts}")
@@ -101,8 +114,8 @@ class FeastDQOnlyConnector:
                 for res in results:
                     cat = res.get("category") or {}
                     evt = MonitoringPlatformQualityCheck(
-                        dataset_id=effective_ds_id,
-                        dataset_name=effective_ds_id,
+                        dataset_id=report.get("datasetId") or ds_id,
+                        dataset_name=ds_name,
                         name=res.get("name"),
                         category={"context": cat.get("context"), "category": cat.get("category")},
                         low=res.get("low"),
