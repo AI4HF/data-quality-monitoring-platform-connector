@@ -4,7 +4,7 @@ class MonitoringPlatformQualityCheck:
     """Event model for the Monitoring Platform's expected 'quality_check' payload."""
     def __init__(self, dataset_id: str, dataset_name: str | None,
                  name: str, category: dict | None,
-                 low, value, passed: bool, at_timestamp: str):
+                 low, high, value, passed: bool, at_timestamp: str):
         """Initialize a quality check event"""
         self.event_type = "quality_check"
         self.dataset_id = dataset_id
@@ -12,6 +12,7 @@ class MonitoringPlatformQualityCheck:
         self.name = name
         self.category = category or {}
         self.low = low
+        self.high = high
         self.value = value
         self.passed = passed
         self.at_timestamp = at_timestamp
@@ -30,6 +31,7 @@ class MonitoringPlatformQualityCheck:
                 }.items() if v is not None
             } if self.category else None,
             "low": self.low,
+            "high": self.high,
             "value": self.value,
             "passed": self.passed,
             "@timestamp": self.at_timestamp
