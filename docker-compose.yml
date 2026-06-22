@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   data-quality-monitoring-platform-connector:
+    container_name: ai4hf-data-quality-monitoring-platform-connector
     image: srdc/data-quality-monitoring-platform-connector:latest
     environment:
       FEAST_SERVER_URL: "http://onfhir-feast:8085/onfhir-feast/api"
